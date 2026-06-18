@@ -1,0 +1,43 @@
+### Core Components of an LFR
+
+To understand how a Line Following Robot functions, it helps to break it down into three main systems: **Sensors** (the eyes), the **Microcontroller** (the brain), and the **Actuators/Drivers** (the muscles).
+
+* **IR Sensor Array (e.g., 5-Channel Array):** Each channel consists of an infrared (IR) transmitter LED and a photodiode receiver.
+* The transmitter emits infrared light downward.
+* **On a white/reflective surface:** The light bounces back and is detected by the photodiode.
+* **On a black line:** The black surface absorbs the infrared light, so little to no light bounces back.
+
+
+* **Microcontroller (Arduino UNO / Nano):** It constantly reads the digital or analog signals (HIGH or LOW) from the sensor array, processes the data through the control logic code, and decides which way the robot needs to steer.
+* **Motor Driver (e.g., L298N H-Bridge):** Microcontrollers cannot output enough current to drive DC motors directly without frying. The L298N acts as a high-current switchboard, taking low-power signals from the Arduino and routing high-power battery voltage to the motors.
+* **DC Gear Motors & Chassis:** Typically, a two-wheel drive chassis with a front caster wheel is used. High-RPM gear motors allow for quick adjustments when turning.
+
+---
+
+### How It Works (The Logic Loop)
+
+The operation of a line follower relies on a continuous feedback loop: **Sense $\rightarrow$ Think $\rightarrow$ Act.**
+
+#### 1. Sensing the Track
+
+As the robot moves, the 5 sensors ride over the track. The microcontroller interprets the track position based on which sensor sees black:
+
+* **Line is centered:** Only the middle sensor (S3) detects black.
+* **Robot drifts right:** The left sensors (S2 or S1) begin to detect black.
+* **Robot drifts left:** The right sensors (S4 or S5) begin to detect black.
+
+#### 2. Making the Decision (Differential Steering)
+
+The robot steers using **differential drive**—meaning it changes direction by varying the speed of the left and right wheels independently rather than turning a steering axle.
+
+| Sensor State | Robot Position | Required Action | Left Motor | Right Motor |
+| --- | --- | --- | --- | --- |
+| `0 0 1 0 0` | Perfectly Centered | Move Straight | Equal Speed | Equal Speed |
+| `0 1 0 0 0` | Off-center to the Right | Slight Left Turn | Slow Down | Speed Up |
+| `1 0 0 0 0` | Sharp Right Drift | Hard Spin Left | Reverse | Forward |
+| `0 0 0 1 0` | Off-center to the Left | Slight Right Turn | Speed Up | Slow Down |
+| `0 0 0 0 1` | Sharp Left Drift | Hard Spin Right | Forward | Reverse |
+
+#### 3. Correcting the Path
+
+By sending Pulse Width Modulation (**PWM**) signals to the motor driver, the Arduino dynamically changes motor speeds. If the robot veers too far off-track, it spins the wheels in opposite directions to pivot in place until the center sensor locks onto the black line again.
